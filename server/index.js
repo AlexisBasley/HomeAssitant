@@ -7,6 +7,12 @@ import { dirname, join } from 'path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
+const ACCOUNT = process.env.GOG_ACCOUNT;
+
+if (!ACCOUNT) {
+  console.error('ERREUR : GOG_ACCOUNT non défini dans .env');
+  process.exit(1);
+}
 
 app.use(express.json());
 app.use(express.static(join(__dirname, '../dashboard')));
@@ -14,7 +20,7 @@ app.use(express.static(join(__dirname, '../dashboard')));
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function gog(cmd) {
-  return execSync(`gog ${cmd}`, { encoding: 'utf8', timeout: 15000 });
+  return execSync(`gog --account ${ACCOUNT} ${cmd}`, { encoding: 'utf8', timeout: 15000 });
 }
 
 function isoNow(offsetDays = 0) {
@@ -110,4 +116,5 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`HomeAssistant server running on http://localhost:${PORT}`);
+  console.log(`Compte Google : ${ACCOUNT}`);
 });
