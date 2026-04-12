@@ -29,6 +29,16 @@ function isoNow(offsetDays = 0) {
   return d.toISOString();
 }
 
+// Récupère l'ID de la première tasklist (mis en cache)
+let tasklistId = null;
+function getTasklistId() {
+  if (tasklistId) return tasklistId;
+  const raw = JSON.parse(gog('tasks lists --json --no-input'));
+  const lists = raw.tasklists || raw;
+  tasklistId = lists[0].id;
+  return tasklistId;
+}
+
 // ─── Calendar ───────────────────────────────────────────────────────────────
 
 app.get('/api/events', (req, res) => {
@@ -37,7 +47,6 @@ app.get('/api/events', (req, res) => {
     const from = isoNow(0);
     const to = isoNow(days);
     const raw = JSON.parse(gog(`calendar events primary --from ${from} --to ${to} --json --no-input`));
-    // gog retourne { events: [...] } — on normalise pour le dashboard
     const events = (raw.events || raw).map(ev => ({
       id: ev.id,
       summary: ev.summary || '(sans titre)',
@@ -79,7 +88,6 @@ app.delete('/api/events/:id', (req, res) => {
 app.get('/api/tasks', (req, res) => {
   try {
     const raw = JSON.parse(gog('tasks list @default --json --no-input'));
-    // gog peut retourner { tasks: [...] } ou [...]
     const tasks = (raw.tasks || raw).map(t => ({
       id: t.id,
       title: t.title || t.name || '(sans titre)',
@@ -94,10 +102,11 @@ app.get('/api/tasks', (req, res) => {
 
 app.post('/api/tasks', (req, res) => {
   try {
+    const listId = getTasklistId();
     const { title } = req.body;
     if (!title) return res.status(400).json({ error: 'title requis' });
-    const t = JSON.stringify(title).replace(/'/g, "'\\''");
-    gog(`tasks create @default --title ${t} --no-input`);
+    const t = JSON.stringify(title);
+    gog(`tasks create ${listId} --title ${t} --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[POST /api/tasks]', err.message);
@@ -107,7 +116,8 @@ app.post('/api/tasks', (req, res) => {
 
 app.patch('/api/tasks/:id/complete', (req, res) => {
   try {
-    gog(`tasks complete @default ${req.params.id} --no-input`);
+    const listId = getTasklistId();
+    gog(`tasks complete ${listId} ${req.params.id} --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[PATCH /api/tasks/:id/complete]', err.message);
@@ -117,7 +127,8 @@ app.patch('/api/tasks/:id/complete', (req, res) => {
 
 app.delete('/api/tasks/:id', (req, res) => {
   try {
-    gog(`tasks delete @default ${req.params.id} --no-input`);
+    const listId = getTasklistId();
+    gog(`tasks delete ${listId} ${req.params.id} --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/tasks/:id]', err.message);
