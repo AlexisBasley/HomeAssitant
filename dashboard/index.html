@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard Familial</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f1117;
+      color: #e8e9ed;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      padding: 16px;
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      grid-template-rows: auto auto auto auto;
+      gap: 14px;
+    }
+
+    /* ── Carte ── */
+    .card {
+      background: #1a1d27;
+      border-radius: 16px;
+      padding: 18px 20px;
+      overflow: hidden;
+    }
+    .card h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    /* ── Header ── */
+    #header {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    #clock { font-size: 3rem; font-weight: 700; line-height: 1; }
+    #date-label { font-size: 1.1rem; color: #9ca3af; margin-top: 4px; }
+    #weather {
+      text-align: right;
+      font-size: 1.4rem;
+      font-weight: 600;
+    }
+    #weather small { display: block; font-size: 0.8rem; color: #6b7280; font-weight: 400; }
+    #refresh-time { font-size: 0.75rem; color: #4b5563; margin-top: 2px; text-align: right; }
+
+    /* ── Agenda ── */
+    #agenda { grid-column: 1 / 2; }
+    .day-group { margin-bottom: 14px; }
+    .day-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #6366f1;
+      margin-bottom: 6px;
+    }
+    .event-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #12141f;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+    }
+    .event-time { font-size: 0.8rem; color: #6b7280; min-width: 48px; }
+    .event-title { flex: 1; margin: 0 10px; font-size: 0.95rem; }
+    .btn-del {
+      background: none;
+      border: none;
+      color: #4b5563;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px 6px;
+      border-radius: 6px;
+      line-height: 1;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-del:active { background: #2d2f3f; color: #ef4444; }
+    #agenda-empty { color: #4b5563; font-size: 0.9rem; }
+
+    /* ── Tasks ── */
+    #tasks { grid-column: 2 / 3; grid-row: 2 / 4; }
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #12141f;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 6px;
+    }
+    .task-check {
+      width: 20px; height: 20px;
+      border: 2px solid #4b5563;
+      border-radius: 50%;
+      flex-shrink: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .task-check.done { background: #6366f1; border-color: #6366f1; }
+    .task-title { flex: 1; font-size: 0.95rem; }
+    .task-title.done { text-decoration: line-through; color: #4b5563; }
+    #task-form {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    #task-input {
+      flex: 1;
+      background: #12141f;
+      border: 1px solid #2d2f3f;
+      border-radius: 10px;
+      color: #e8e9ed;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #task-input:focus { border-color: #6366f1; }
+    #task-add {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #task-add:active { background: #4f52d1; }
+
+    /* ── Accès rapides ── */
+    #quick { grid-column: 1 / 2; }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .quick-btn {
+      background: #12141f;
+      border: none;
+      border-radius: 12px;
+      color: #e8e9ed;
+      padding: 16px 8px;
+      font-size: 0.85rem;
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .quick-btn:active { background: #2d2f3f; }
+    .quick-icon { font-size: 1.6rem; }
+    #garage-btn .quick-icon { transition: color 0.2s; }
+    #garage-btn.open .quick-icon { color: #22c55e; }
+    #garage-btn.closed .quick-icon { color: #ef4444; }
+
+    /* ── Chat ── */
+    #chat { grid-column: 1 / -1; }
+    #chat-messages {
+      height: 120px;
+      overflow-y: auto;
+      background: #12141f;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .msg-user { color: #6366f1; align-self: flex-end; }
+    .msg-bot  { color: #9ca3af; align-self: flex-start; }
+    #chat-form { display: flex; gap: 8px; }
+    #chat-input {
+      flex: 1;
+      background: #12141f;
+      border: 1px solid #2d2f3f;
+      border-radius: 10px;
+      color: #e8e9ed;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #chat-input:focus { border-color: #6366f1; }
+    #chat-send {
+      background: #6366f1;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    #chat-send:active { background: #4f52d1; }
+
+    /* ── Erreur serveur ── */
+    .server-down {
+      color: #ef4444;
+      font-size: 0.85rem;
+      padding: 6px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="card" id="header">
+    <div>
+      <div id="clock">00:00:00</div>
+      <div id="date-label">—</div>
+    </div>
+    <div>
+      <div id="weather">…</div>
+      <div id="refresh-time"></div>
+    </div>
+  </div>
+
+  <!-- AGENDA -->
+  <div class="card" id="agenda">
+    <h2>Agenda — 7 prochains jours</h2>
+    <div id="agenda-content"><span id="agenda-empty">Chargement…</span></div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="card" id="tasks">
+    <h2>Tâches</h2>
+    <div id="tasks-content"></div>
+    <form id="task-form">
+      <input id="task-input" type="text" placeholder="Nouvelle tâche…" autocomplete="off" />
+      <button id="task-add" type="submit">+</button>
+    </form>
+  </div>
+
+  <!-- ACCÈS RAPIDES -->
+  <div class="card" id="quick">
+    <h2>Accès rapides</h2>
+    <div class="quick-grid">
+      <button class="quick-btn closed" id="garage-btn">
+        <span class="quick-icon">🚗</span>
+        Garage
+      </button>
+      <a class="quick-btn" href="https://home.netatmo.com" target="_blank" rel="noopener">
+        <span class="quick-icon">🌡️</span>
+        Netatmo
+      </a>
+      <a class="quick-btn" href="https://eseecloud.app" target="_blank" rel="noopener">
+        <span class="quick-icon">📷</span>
+        Caméras
+      </a>
+      <a class="quick-btn" href="https://smartlife.tuya.com" target="_blank" rel="noopener">
+        <span class="quick-icon">🔒</span>
+        Alarme
+      </a>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="card" id="chat">
+    <h2>Assistant OpenClaw</h2>
+    <div id="chat-messages"></div>
+    <form id="chat-form">
+      <input id="chat-input" type="text" placeholder="Envoyer une commande…" autocomplete="off" />
+      <button id="chat-send" type="submit">Envoyer</button>
+    </form>
+  </div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// UTILITAIRES
+// ═══════════════════════════════════════════════════════
+
+const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+function formatTime(d) {
+  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2,'0')).join(':');
+}
+function formatDate(d) {
+  return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+}
+function formatHM(iso) {
+  const d = new Date(iso);
+  return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+function dayKey(iso) {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+function dayLabel(iso) {
+  const d = new Date(iso);
+  const t = new Date();
+  const tk = `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
+  const tomorrow = new Date(t); tomorrow.setDate(t.getDate() + 1);
+  const tmk = `${tomorrow.getFullYear()}-${tomorrow.getMonth()}-${tomorrow.getDate()}`;
+  const dk = dayKey(iso);
+  if (dk === tk) return "Aujourd'hui";
+  if (dk === tmk) return 'Demain';
+  return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
+}
+
+async function apiFetch(url, opts = {}) {
+  const res = await fetch(url, opts);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+// ═══════════════════════════════════════════════════════
+// HORLOGE + DATE
+// ═══════════════════════════════════════════════════════
+
+function tickClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = formatTime(now);
+  document.getElementById('date-label').textContent = formatDate(now);
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+// ═══════════════════════════════════════════════════════
+// MÉTÉO (wttr.in)
+// ═══════════════════════════════════════════════════════
+
+async function loadWeather() {
+  try {
+    const data = await apiFetch('https://wttr.in/Chelles?format=j1');
+    const cur = data.current_condition[0];
+    const temp = cur.temp_C;
+    const desc = cur.weatherDesc[0].value;
+    document.getElementById('weather').innerHTML =
+      `${temp}°C <small>${desc}</small>`;
+  } catch {
+    document.getElementById('weather').textContent = '— météo indisponible';
+  }
+}
+loadWeather();
+setInterval(loadWeather, 10 * 60 * 1000);
+
+// ═══════════════════════════════════════════════════════
+// AGENDA
+// ═══════════════════════════════════════════════════════
+
+async function loadEvents() {
+  const container = document.getElementById('agenda-content');
+  try {
+    const events = await apiFetch('/api/events?days=7');
+    if (!events.length) {
+      container.innerHTML = '<span id="agenda-empty">Aucun événement cette semaine.</span>';
+      return;
+    }
+    // Grouper par jour
+    const groups = {};
+    for (const ev of events) {
+      const k = dayKey(ev.start);
+      if (!groups[k]) groups[k] = { label: dayLabel(ev.start), items: [] };
+      groups[k].items.push(ev);
+    }
+    container.innerHTML = Object.values(groups).map(g => `
+      <div class="day-group">
+        <div class="day-label">${g.label}</div>
+        ${g.items.map(ev => `
+          <div class="event-item" data-id="${ev.id}">
+            <span class="event-time">${formatHM(ev.start)}</span>
+            <span class="event-title">${escHtml(ev.summary || '(sans titre)')}</span>
+            <button class="btn-del" data-id="${ev.id}" title="Supprimer">×</button>
+          </div>
+        `).join('')}
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Supprimer cet événement ?')) return;
+        try {
+          await apiFetch(`/api/events/${btn.dataset.id}`, { method: 'DELETE' });
+          loadEvents();
+        } catch {
+          alert('Erreur lors de la suppression.');
+        }
+      });
+    });
+  } catch {
+    container.innerHTML = '<span class="server-down">Serveur indisponible — agenda non chargé</span>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════════════════════
+
+async function loadTasks() {
+  const container = document.getElementById('tasks-content');
+  try {
+    const tasks = await apiFetch('/api/tasks');
+    if (!tasks.length) {
+      container.innerHTML = '<span style="color:#4b5563;font-size:.9rem">Aucune tâche.</span>';
+      return;
+    }
+    container.innerHTML = tasks.map(t => `
+      <div class="task-item" data-id="${t.id}">
+        <div class="task-check ${t.completed ? 'done' : ''}" data-id="${t.id}"></div>
+        <span class="task-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</span>
+        <button class="btn-del" data-id="${t.id}" title="Supprimer">×</button>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.task-check').forEach(el => {
+      el.addEventListener('click', async () => {
+        try {
+          await apiFetch(`/api/tasks/${el.dataset.id}/complete`, { method: 'PATCH' });
+          loadTasks();
+        } catch { alert('Erreur.'); }
+      });
+    });
+    container.querySelectorAll('.btn-del').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        try {
+          await apiFetch(`/api/tasks/${btn.dataset.id}`, { method: 'DELETE' });
+          loadTasks();
+        } catch { alert('Erreur.'); }
+      });
+    });
+  } catch {
+    container.innerHTML = '<span class="server-down">Serveur indisponible — tâches non chargées</span>';
+  }
+}
+
+document.getElementById('task-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = document.getElementById('task-input');
+  const title = input.value.trim();
+  if (!title) return;
+  try {
+    await apiFetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    input.value = '';
+    loadTasks();
+  } catch { alert('Erreur lors de la création de la tâche.'); }
+});
+
+// ═══════════════════════════════════════════════════════
+// GARAGE (stub Tuya)
+// ═══════════════════════════════════════════════════════
+
+let garageOpen = false;
+document.getElementById('garage-btn').addEventListener('click', () => {
+  garageOpen = !garageOpen;
+  const btn = document.getElementById('garage-btn');
+  btn.classList.toggle('open', garageOpen);
+  btn.classList.toggle('closed', !garageOpen);
+  // TODO: appel API Tuya
+});
+
+// ═══════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════
+
+function appendMsg(text, type) {
+  const box = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `msg-${type}`;
+  el.textContent = text;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+document.getElementById('chat-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  appendMsg(msg, 'user');
+  input.value = '';
+  // Stub — à brancher sur OpenClaw
+  setTimeout(() => appendMsg('Commande transmise à OpenClaw.', 'bot'), 400);
+});
+
+// ═══════════════════════════════════════════════════════
+// INDICATEUR DE RAFRAÎCHISSEMENT
+// ═══════════════════════════════════════════════════════
+
+function updateRefreshLabel() {
+  const now = new Date();
+  document.getElementById('refresh-time').textContent =
+    `Actualisé à ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+async function refreshAll() {
+  await Promise.all([loadEvents(), loadTasks()]);
+  updateRefreshLabel();
+}
+
+// ═══════════════════════════════════════════════════════
+// SÉCURITÉ — échappement HTML
+// ═══════════════════════════════════════════════════════
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+refreshAll();
+setInterval(refreshAll, 60 * 1000);
+</script>
+</body>
+</html>
