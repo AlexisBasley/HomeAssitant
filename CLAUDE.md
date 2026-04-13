@@ -2,10 +2,32 @@
 
 Voir @README.md pour le contexte du projet et @server/package.json pour les dépendances.
 
+## Architecture globale
+
+```
+Utilisateurs : Telegram (partout) + Dashboard tablette (salle à manger)
+       │
+       ▼
+Mac Mini M4 (cœur) :
+  ├─ OpenClaw (IA permanente, raisonnement)
+  ├─ Express + Dashboard (ce repo)
+  ├─ gog CLI → Google (Gmail, Calendar, Tasks)
+  └─ Skill Tuya → Garage
+       │
+       ▼
+Services cloud : Google, Tuya API, wttr.in (météo sans clé)
+       │
+       ▼
+Domotique : Garage (Tuya) ✅ | Netatmo, Caméras (apps) ⏳ | Alarme/Vidéo IA (phase 2)
+```
+
+**Ce repo = Dashboard + API Express uniquement.** OpenClaw, Telegram, Tuya skill → gérés ailleurs.
+
 ## Commandes
 
 ```bash
 cd server && npm start     # Démarre sur http://localhost:3000
+docker compose up -d       # Alternative Docker
 ```
 
 ## Style de code
