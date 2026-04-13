@@ -1,0 +1,12 @@
+services:
+  homeassistant:
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - server/.env
+    volumes:
+      - ./dashboard:/app/dashboard
+      - ./server:/app/server
+      - /app/server/node_modules
+    restart: unless-stopped
