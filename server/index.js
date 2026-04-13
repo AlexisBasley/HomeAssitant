@@ -9,10 +9,38 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ACCOUNT = process.env.GOG_ACCOUNT;
 
-if (!ACCOUNT) {
+// ─── Mode Mock (dev sans gog) ───────────────────────────────────────────────
+
+function checkGogAvailable() {
+  try {
+    execSync('gog --version', { encoding: 'utf8', timeout: 5000, stdio: 'pipe' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+const DEV_MODE = process.env.DEV_MODE === 'true' || !checkGogAvailable();
+
+if (DEV_MODE) {
+  console.log('⚠️  Mode MOCK activé (gog non disponible ou DEV_MODE=true)');
+} else if (!ACCOUNT) {
   console.error('ERREUR : GOG_ACCOUNT non défini dans .env');
   process.exit(1);
 }
+
+// Données mock pour le développement
+const mockEvents = [
+  { id: 'mock-1', summary: 'Réunion équipe', start: new Date().toISOString(), end: new Date(Date.now() + 3600000).toISOString() },
+  { id: 'mock-2', summary: 'Dentiste Emma', start: new Date(Date.now() + 86400000).toISOString(), end: new Date(Date.now() + 86400000 + 3600000).toISOString() },
+  { id: 'mock-3', summary: 'Anniversaire Maman', start: new Date(Date.now() + 172800000).toISOString(), end: new Date(Date.now() + 172800000 + 86400000).toISOString() },
+];
+
+const mockTasks = [
+  { id: 'mock-t1', title: 'Faire les courses', completed: false },
+  { id: 'mock-t2', title: 'Appeler plombier', completed: false },
+  { id: 'mock-t3', title: 'Payer facture EDF', completed: true },
+];
 
 app.use(express.json());
 app.use(express.static(join(__dirname, '../dashboard')));
@@ -42,6 +70,9 @@ function getTasklistId() {
 // ─── Calendar ───────────────────────────────────────────────────────────────
 
 app.get('/api/events', (req, res) => {
+  if (DEV_MODE) {
+    return res.json(mockEvents);
+  }
   try {
     const days = parseInt(req.query.days) || 7;
     const from = isoNow(0);
@@ -61,6 +92,13 @@ app.get('/api/events', (req, res) => {
 });
 
 app.post('/api/events', (req, res) => {
+  if (DEV_MODE) {
+    const { summary, start, end } = req.body;
+    if (!summary || !start || !end) return res.status(400).json({ error: 'summary, start et end requis' });
+    const newEvent = { id: `mock-${Date.now()}`, summary, start, end };
+    mockEvents.push(newEvent);
+    return res.json({ ok: true, event: newEvent });
+  }
   try {
     const { summary, start, end } = req.body;
     if (!summary || !start || !end) return res.status(400).json({ error: 'summary, start et end requis' });
@@ -74,6 +112,11 @@ app.post('/api/events', (req, res) => {
 });
 
 app.delete('/api/events/:id', (req, res) => {
+  if (DEV_MODE) {
+    const idx = mockEvents.findIndex(e => e.id === req.params.id);
+    if (idx !== -1) mockEvents.splice(idx, 1);
+    return res.json({ ok: true });
+  }
   try {
     gog(`calendar delete primary ${req.params.id} --no-input`);
     res.json({ ok: true });
@@ -86,6 +129,9 @@ app.delete('/api/events/:id', (req, res) => {
 // ─── Tasks ──────────────────────────────────────────────────────────────────
 
 app.get('/api/tasks', (req, res) => {
+  if (DEV_MODE) {
+    return res.json(mockTasks);
+  }
   try {
     const raw = JSON.parse(gog('tasks list @default --json --no-input'));
     const tasks = (raw.tasks || raw).map(t => ({
@@ -101,6 +147,13 @@ app.get('/api/tasks', (req, res) => {
 });
 
 app.post('/api/tasks', (req, res) => {
+  if (DEV_MODE) {
+    const { title } = req.body;
+    if (!title) return res.status(400).json({ error: 'title requis' });
+    const newTask = { id: `mock-t${Date.now()}`, title, completed: false };
+    mockTasks.push(newTask);
+    return res.json({ ok: true, task: newTask });
+  }
   try {
     const listId = getTasklistId();
     const { title } = req.body;
@@ -115,6 +168,11 @@ app.post('/api/tasks', (req, res) => {
 });
 
 app.patch('/api/tasks/:id/complete', (req, res) => {
+  if (DEV_MODE) {
+    const task = mockTasks.find(t => t.id === req.params.id);
+    if (task) task.completed = true;
+    return res.json({ ok: true });
+  }
   try {
     const listId = getTasklistId();
     gog(`tasks complete ${listId} ${req.params.id} --no-input`);
@@ -126,6 +184,11 @@ app.patch('/api/tasks/:id/complete', (req, res) => {
 });
 
 app.delete('/api/tasks/:id', (req, res) => {
+  if (DEV_MODE) {
+    const idx = mockTasks.findIndex(t => t.id === req.params.id);
+    if (idx !== -1) mockTasks.splice(idx, 1);
+    return res.json({ ok: true });
+  }
   try {
     const listId = getTasklistId();
     gog(`tasks delete ${listId} ${req.params.id} --no-input`);
@@ -140,5 +203,9 @@ app.delete('/api/tasks/:id', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`HomeAssistant server running on http://localhost:${PORT}`);
-  console.log(`Compte Google : ${ACCOUNT}`);
+  if (DEV_MODE) {
+    console.log('🔧 Mode développement : données mock actives');
+  } else {
+    console.log(`Compte Google : ${ACCOUNT}`);
+  }
 });
