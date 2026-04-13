@@ -191,7 +191,7 @@ app.delete('/api/tasks/:id', (req, res) => {
   }
   try {
     const listId = getTasklistId();
-    gog(`tasks delete ${listId} ${req.params.id} --no-input`);
+    gog(`tasks delete ${listId} ${req.params.id} --force --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/tasks/:id]', err.message);
