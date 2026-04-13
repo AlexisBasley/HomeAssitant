@@ -1,5 +1,7 @@
 # CLAUDE.md
 
+Voir @README.md pour le contexte du projet et @server/package.json pour les dépendances.
+
 ## Commandes
 
 ```bash
