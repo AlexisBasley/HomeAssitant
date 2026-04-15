@@ -26,14 +26,21 @@
       grid-template-rows: 72px 1fr 140px;
       grid-template-columns: 3fr 1fr;
       grid-template-areas:
-        "header  header"
-        "agenda  tasks"
-        "bottom  tasks";
+        "header   header"
+        "agenda   right"
+        "recipes  right";
       gap: 10px;
       padding: 10px;
       height: 100vh;
       max-width: 1280px;
       margin: 0 auto;
+    }
+
+    #right-col {
+      grid-area: right;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     /* ── Carte ── */
@@ -159,9 +166,9 @@
     .month-more { font-size: 0.55rem; color: #a89984; font-weight: 700; }
 
     /* ════════════════════════════════════
-       TASKS — hauteur double (rows 2+3)
+       COLONNE DROITE — Tasks + Chat
        ════════════════════════════════════ */
-    #tasks { grid-area: tasks; }
+    #tasks { flex: 1; min-height: 0; }
     .tasks-scroll { flex: 1; overflow-y: auto; min-height: 0; }
     .tasks-scroll::-webkit-scrollbar { width: 3px; }
     .tasks-scroll::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
@@ -198,17 +205,9 @@
     #task-add:active { background: #2a231b; }
 
     /* ════════════════════════════════════
-       BANDE DU BAS — Recettes + Chat côte à côte
+       RECETTES — bande du bas pleine largeur
        ════════════════════════════════════ */
-    #bottom {
-      grid-area: bottom;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    /* Recettes — scroll horizontal */
-    #recipes { overflow: hidden; display: flex; flex-direction: column; }
+    #recipes { grid-area: recipes; overflow: hidden; display: flex; flex-direction: column; }
     .recipes-header-row {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 6px; flex-shrink: 0;
@@ -263,46 +262,25 @@
     .recipe-btn-del { background: #f0ebe3; color: #a89984; }
     .recipe-btn-del:active { color: #e05252; }
 
-    /* Chat */
-    #chat { overflow: hidden; display: flex; flex-direction: column; }
-    #chat-messages {
+    /* Notifications OpenClaw — sous les tâches */
+    #notifs { overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0; height: 160px; }
+    #notifs-list {
       flex: 1; overflow-y: auto; min-height: 0;
-      display: flex; flex-direction: column; gap: 6px;
-      margin-bottom: 8px; padding: 2px 0;
+      display: flex; flex-direction: column; gap: 5px;
+      padding: 2px 0;
     }
-    #chat-messages::-webkit-scrollbar { width: 3px; }
-    #chat-messages::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
-    .chat-bubble { display: flex; align-items: flex-end; gap: 6px; }
-    .chat-bubble.user { flex-direction: row-reverse; }
-    .chat-avatar {
-      width: 26px; height: 26px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem; font-weight: 800; flex-shrink: 0;
+    #notifs-list::-webkit-scrollbar { width: 3px; }
+    #notifs-list::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
+    .notif-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: #faf8f5; border-radius: 12px;
+      padding: 8px 10px;
     }
-    .chat-avatar.ai { background: #4285f4; color: #fff; }
-    .chat-avatar.you { background: #f0810f; color: #fff; }
-    .chat-text {
-      max-width: 75%; padding: 7px 11px; border-radius: 14px;
-      font-size: 0.82rem; line-height: 1.4;
-    }
-    .chat-bubble.ai .chat-text { background: #f5f1ec; color: #3d3429; border-bottom-left-radius: 3px; }
-    .chat-bubble.user .chat-text { background: #4285f4; color: #fff; border-bottom-right-radius: 3px; }
-    #chat-form { display: flex; gap: 6px; flex-shrink: 0; }
-    #chat-input {
-      flex: 1; background: #faf8f5; border: 1.5px solid #e8e1d8;
-      border-radius: 12px; color: #3d3429; padding: 8px 12px;
-      font-size: 0.85rem; font-family: 'Nunito', sans-serif;
-      outline: none; min-height: 40px;
-    }
-    #chat-input:focus { border-color: #4285f4; }
-    #chat-send {
-      background: #4285f4; color: #fff; border: none;
-      border-radius: 12px; padding: 8px 16px;
-      font-size: 0.85rem; font-weight: 700; font-family: 'Nunito', sans-serif;
-      cursor: pointer; min-height: 40px;
-      -webkit-tap-highlight-color: transparent;
-    }
-    #chat-send:active { background: #2b6dd4; }
+    .notif-icon { font-size: 1rem; flex-shrink: 0; line-height: 1.3; }
+    .notif-text { font-size: 0.82rem; color: #3d3429; line-height: 1.4; }
+    .notif-item.urgent { background: #fff5f5; }
+    .notif-item.urgent .notif-text { color: #c0392b; font-weight: 700; }
+    .notif-empty { font-size: 0.82rem; color: #a89984; padding: 6px 0; }
 
     /* ── Messages d'état ── */
     .server-down { color: #e05252; font-size: 0.8rem; font-weight: 600; }
@@ -357,52 +335,50 @@
     </div>
   </div>
 
-  <!-- TASKS -->
-  <div class="card" id="tasks">
-    <div class="card-header">
-      <span class="card-title">Tâches</span>
-    </div>
-    <div class="tasks-scroll">
-      <div id="tasks-content"></div>
-    </div>
-    <form id="task-form">
-      <input id="task-input" type="text" placeholder="Nouvelle tâche…" autocomplete="off" />
-      <button id="task-add" type="submit">+</button>
-    </form>
-  </div>
+  <!-- COLONNE DROITE : Tasks + Chat -->
+  <div id="right-col">
 
-  <!-- BANDE BAS : Recettes + Chat -->
-  <div id="bottom">
-
-    <!-- RECETTES PICNIC -->
-    <div class="card" id="recipes">
-      <div class="card-header" style="margin-bottom:6px;">
-        <span class="card-title">Recettes Picnic</span>
+    <!-- TASKS -->
+    <div class="card" id="tasks">
+      <div class="card-header">
+        <span class="card-title">Tâches</span>
       </div>
-      <div class="recipes-header-row">
-        <span class="recipes-progress-label" id="recipes-progress-label">0 / 0 cuisinées</span>
-        <div class="recipes-progress-bar-wrap">
-          <div class="recipes-progress-bar" id="recipes-progress-bar" style="width:0%"></div>
-        </div>
+      <div class="tasks-scroll">
+        <div id="tasks-content"></div>
       </div>
-      <div class="recipes-scroll" id="recipes-scroll">
-        <span class="empty-msg">Chargement…</span>
-      </div>
-    </div>
-
-    <!-- CHAT -->
-    <div class="card" id="chat">
-      <div class="card-header" style="margin-bottom:6px;">
-        <span class="card-title">Assistant OpenClaw</span>
-      </div>
-      <div id="chat-messages"></div>
-      <form id="chat-form">
-        <input id="chat-input" type="text" placeholder="Envoyer un message…" autocomplete="off" />
-        <button id="chat-send" type="submit">Envoyer</button>
+      <form id="task-form">
+        <input id="task-input" type="text" placeholder="Nouvelle tâche…" autocomplete="off" />
+        <button id="task-add" type="submit">+</button>
       </form>
     </div>
 
-  </div><!-- /bottom -->
+    <!-- NOTIFICATIONS OPENCLAW -->
+    <div class="card" id="notifs">
+      <div class="card-header" style="margin-bottom:6px;">
+        <span class="card-title">OpenClaw</span>
+      </div>
+      <div id="notifs-list">
+        <span class="notif-empty">Chargement…</span>
+      </div>
+    </div>
+
+  </div><!-- /right-col -->
+
+  <!-- RECETTES PICNIC — bande du bas -->
+  <div class="card" id="recipes">
+    <div class="card-header" style="margin-bottom:6px;">
+      <span class="card-title">Recettes Picnic</span>
+    </div>
+    <div class="recipes-header-row">
+      <span class="recipes-progress-label" id="recipes-progress-label">0 / 0 cuisinées</span>
+      <div class="recipes-progress-bar-wrap">
+        <div class="recipes-progress-bar" id="recipes-progress-bar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="recipes-scroll" id="recipes-scroll">
+      <span class="empty-msg">Chargement…</span>
+    </div>
+  </div>
 
 </div><!-- /dashboard -->
 <script>
@@ -639,6 +615,7 @@ async function loadTasks() {
   try { tasks = await apiFetch('/api/tasks'); }
   catch { tasks = MOCK_TASKS; }
 
+  window._allTasks = tasks;
   if (!tasks.length) { container.innerHTML = '<span class="empty-msg">Aucune tâche.</span>'; return; }
   container.innerHTML = tasks.map(t => `
     <div class="task-item">
@@ -730,32 +707,82 @@ async function loadRecipes() {
 }
 
 // ═══════════════════════════════════════════════════════
-// CHAT
+// NOTIFICATIONS OPENCLAW
 // ═══════════════════════════════════════════════════════
 
-function appendBubble(text, role) {
-  const box = document.getElementById('chat-messages');
-  const el = document.createElement('div');
-  el.className = `chat-bubble ${role}`;
-  el.innerHTML = `<div class="chat-avatar ${role}">${role === 'ai' ? 'AI' : 'V'}</div><div class="chat-text">${esc(text)}</div>`;
-  box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
+function computeNotifications() {
+  const notifs = [];
+  const now = new Date();
+  const todayKey = dayKey(now);
+
+  // ── Événements du jour ──
+  const todayEvents = allEvents.filter(ev => dayKey(new Date(ev.start)) === todayKey);
+  for (const ev of todayEvents) {
+    const start = new Date(ev.start);
+    const diffMin = Math.round((start - now) / 60000);
+    if (diffMin > 0 && diffMin <= 60) {
+      notifs.push({ icon: '⏰', text: `Dans ${diffMin} min : ${ev.summary}`, urgent: true });
+    } else if (diffMin > 0) {
+      notifs.push({ icon: '📅', text: `Aujourd'hui à ${formatHM(ev.start)} : ${ev.summary}` });
+    } else if (diffMin > -30) {
+      notifs.push({ icon: '📅', text: `En cours : ${ev.summary}` });
+    }
+  }
+
+  // ── Événement demain matin ──
+  const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1);
+  const tomorrowKey = dayKey(tomorrow);
+  const tomorrowEarly = allEvents.filter(ev => {
+    const d = new Date(ev.start);
+    return dayKey(d) === tomorrowKey && d.getHours() < 10;
+  });
+  for (const ev of tomorrowEarly) {
+    notifs.push({ icon: '📅', text: `Demain à ${formatHM(ev.start)} : ${ev.summary}` });
+  }
+
+  // ── Tâches anciennes (> 7 jours sans être cochées) ──
+  // On approxime : toutes les tâches non complétées sont potentiellement vieilles
+  // (sans date de création dispo côté client, on signale si > 5 tâches non faites)
+  const pending = (window._allTasks || []).filter(t => !t.completed);
+  if (pending.length >= 5) {
+    notifs.push({ icon: '⚠️', text: `${pending.length} tâches en attente — pense à faire le tri` });
+  } else {
+    for (const t of pending) {
+      if (t.due) {
+        const due = new Date(t.due);
+        const daysLate = Math.floor((now - due) / 86400000);
+        if (daysLate > 0) {
+          notifs.push({ icon: '⚠️', text: `"${t.title}" est en retard de ${daysLate} jour${daysLate > 1 ? 's' : ''}`, urgent: true });
+        }
+      }
+    }
+  }
+
+  // ── Recettes presque épuisées ──
+  const remaining = recipes.filter(r => !r.done).length;
+  if (recipes.length > 0 && remaining <= 2) {
+    notifs.push({ icon: '🍽️', text: remaining === 0 ? 'Plus aucune recette à cuisiner !' : `Plus que ${remaining} recette${remaining > 1 ? 's' : ''} à cuisiner`, urgent: remaining === 0 });
+  }
+
+  return notifs;
 }
 
-document.getElementById('chat-form').addEventListener('submit', async e => {
-  e.preventDefault();
-  const input = document.getElementById('chat-input');
-  const msg = input.value.trim();
-  if (!msg) return;
-  appendBubble(msg, 'user');
-  input.value = '';
-  try {
-    const data = await apiFetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
-    appendBubble(data.reply || data.message || 'Message reçu.', 'ai');
-  } catch {
-    appendBubble('Serveur indisponible.', 'ai');
+function renderNotifications() {
+  const list = document.getElementById('notifs-list');
+  const notifs = computeNotifications();
+
+  if (!notifs.length) {
+    list.innerHTML = '<span class="notif-empty">Tout est calme 🌿</span>';
+    return;
   }
-});
+
+  list.innerHTML = notifs.map(n => `
+    <div class="notif-item${n.urgent ? ' urgent' : ''}">
+      <span class="notif-icon">${n.icon}</span>
+      <span class="notif-text">${esc(n.text)}</span>
+    </div>
+  `).join('');
+}
 
 // ═══════════════════════════════════════════════════════
 // REFRESH
@@ -775,6 +802,7 @@ try {
 
 async function refreshAll() {
   await Promise.all([loadEvents(), loadTasks(), loadRecipes()]);
+  renderNotifications();
   updateRefreshLabel();
 }
 
