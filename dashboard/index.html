@@ -134,6 +134,52 @@
     }
     .btn-del:active { background: #f0ebe3; color: #e05252; }
 
+    /* Vue Semaine */
+    .week-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      flex: 1; min-height: 0;
+    }
+    .week-col {
+      background: #faf8f5;
+      border-radius: 14px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    .week-col::-webkit-scrollbar { width: 2px; }
+    .week-col::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 2px; }
+    .week-col.today { background: #f0f4ff; }
+    .week-col-header {
+      font-size: 0.65rem; font-weight: 700; text-align: center;
+      color: #a89984; text-transform: uppercase; margin-bottom: 4px; flex-shrink: 0;
+    }
+    .week-col.today .week-col-header { color: #4285f4; }
+    .week-col-day {
+      font-size: 1rem; font-weight: 800; text-align: center;
+      color: #3d3429; line-height: 1; flex-shrink: 0;
+    }
+    .week-col.today .week-col-day {
+      background: #4285f4; color: #fff;
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto;
+    }
+    .week-event {
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+    .week-empty { font-size: 0.65rem; color: #c8bdb0; text-align: center; margin-top: 4px; }
+
     /* Vue Mois */
     #month-view { display: none; flex-direction: column; flex: 1; min-height: 0; }
     .month-nav {
@@ -316,6 +362,7 @@
       <span class="card-title">Agenda</span>
       <div class="toggle-pills">
         <button class="pill active" id="pill-list" onclick="switchView('list')">Liste</button>
+        <button class="pill" id="pill-week" onclick="switchView('week')">Semaine</button>
         <button class="pill" id="pill-month" onclick="switchView('month')">Mois</button>
       </div>
     </div>
@@ -325,6 +372,11 @@
       <div class="agenda-scroll" id="agenda-content">
         <span class="empty-msg">Chargement…</span>
       </div>
+    </div>
+
+    <!-- Vue Semaine -->
+    <div id="week-view" style="display:none;flex-direction:column;flex:1;min-height:0;">
+      <div class="week-grid" id="week-grid"></div>
     </div>
 
     <!-- Vue Mois -->
@@ -445,12 +497,16 @@ setInterval(tickClock, 1000);
 // MÉTÉO
 // ═══════════════════════════════════════════════════════
 
+let weatherData = null; // données brutes wttr.in conservées pour les notifications
+
 async function loadWeather() {
   try {
     const data = await apiFetch('https://wttr.in/Chelles?format=j1');
     const cur = data.current_condition[0];
     document.getElementById('weather-temp').textContent = `${cur.temp_C}°C`;
     document.getElementById('weather-desc').textContent = cur.weatherDesc[0].value;
+    weatherData = data;
+    renderNotifications();
   } catch {
     document.getElementById('weather-temp').textContent = '—';
     document.getElementById('weather-desc').textContent = 'météo indisponible';
@@ -512,10 +568,45 @@ let monthOffset = 0;
 function switchView(v) {
   currentView = v;
   document.getElementById('pill-list').classList.toggle('active', v === 'list');
+  document.getElementById('pill-week').classList.toggle('active', v === 'week');
   document.getElementById('pill-month').classList.toggle('active', v === 'month');
   document.getElementById('list-view').style.display  = v === 'list'  ? 'flex' : 'none';
+  document.getElementById('week-view').style.display  = v === 'week'  ? 'flex' : 'none';
   document.getElementById('month-view').style.display = v === 'month' ? 'flex' : 'none';
   if (v === 'month') renderMonth();
+  if (v === 'week') renderWeek();
+}
+
+function renderWeek() {
+  const today = new Date();
+  // Lundi de la semaine courante
+  const monday = new Date(today);
+  const dow = today.getDay() === 0 ? 6 : today.getDay() - 1;
+  monday.setDate(today.getDate() - dow);
+
+  const grid = document.getElementById('week-grid');
+  let html = '';
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + i);
+    const isToday = dayKey(day) === dayKey(today);
+    const dayEvents = allEvents.filter(ev => dayKey(new Date(ev.start)) === dayKey(day));
+
+    const evHtml = dayEvents.length
+      ? dayEvents.map(ev => `
+          <div class="week-event" style="background:${esc(ev.calColor||'#4285f4')}">
+            ${esc(formatHM(ev.start))} ${esc(ev.summary||'')}
+          </div>`).join('')
+      : `<div class="week-empty">—</div>`;
+
+    html += `
+      <div class="week-col${isToday ? ' today' : ''}">
+        <div class="week-col-header">${DAYS_SHORT[i]}</div>
+        <div class="week-col-day">${day.getDate()}</div>
+        ${evHtml}
+      </div>`;
+  }
+  grid.innerHTML = html;
 }
 
 function changeMonth(delta) { monthOffset += delta; renderMonth(); }
@@ -529,6 +620,7 @@ async function loadEvents() {
   } catch { events = MOCK_EVENTS; }
   allEvents = events;
   if (currentView === 'month') renderMonth();
+  if (currentView === 'week') renderWeek();
   if (!events.length) { container.innerHTML = '<span class="empty-msg">Aucun événement.</span>'; return; }
 
   const groups = new Map();
@@ -760,6 +852,46 @@ function computeNotifications() {
         if (daysLate > 0) {
           notifs.push({ icon: '⚠️', text: `"${t.title}" est en retard de ${daysLate} jour${daysLate > 1 ? 's' : ''}`, urgent: true });
         }
+      }
+    }
+  }
+
+  // ── Alertes météo moto ──
+  if (weatherData) {
+    const cur = weatherData.current_condition?.[0];
+    const today = weatherData.weather?.[0]; // prévisions du jour
+
+    if (cur && today) {
+      const tempC     = parseInt(cur.temp_C);
+      const windKmph  = parseInt(cur.windspeedKmph);
+      const precipMm  = parseFloat(today.hourly?.reduce((s, h) => s + parseFloat(h.precipMM || 0), 0) || 0);
+      const desc      = (cur.weatherDesc?.[0]?.value || '').toLowerCase();
+      const maxWindKmph = Math.max(...(today.hourly || []).map(h => parseInt(h.windspeedKmph || 0)));
+
+      // Orage
+      if (desc.includes('thunder') || desc.includes('orage') || (today.hourly || []).some(h => (h.weatherDesc?.[0]?.value || '').toLowerCase().includes('thunder'))) {
+        notifs.unshift({ icon: '⛈️', text: 'Orage prévu aujourd\'hui — prudence en moto', urgent: true });
+      }
+      // Pluie
+      else if (precipMm >= 5 || desc.includes('rain') || desc.includes('drizzle') || desc.includes('pluie')) {
+        notifs.unshift({ icon: '🌧️', text: `Pluie prévue aujourd'hui (${precipMm.toFixed(0)} mm) — prends ton équipement`, urgent: precipMm >= 10 });
+      }
+      else if (precipMm > 0) {
+        notifs.unshift({ icon: '🌦️', text: `Risque de pluie légère (${precipMm.toFixed(1)} mm)` });
+      }
+
+      // Gel
+      if (tempC <= 3) {
+        notifs.unshift({ icon: '🧊', text: `Température ${tempC}°C — risque de gel sur la route`, urgent: true });
+      } else if (tempC <= 7) {
+        notifs.unshift({ icon: '🥶', text: `${tempC}°C ce matin — route froide, prudence en moto` });
+      }
+
+      // Vent fort
+      if (maxWindKmph >= 70) {
+        notifs.unshift({ icon: '💨', text: `Vents forts jusqu'à ${maxWindKmph} km/h aujourd'hui`, urgent: true });
+      } else if (maxWindKmph >= 50) {
+        notifs.unshift({ icon: '💨', text: `Vent à ${maxWindKmph} km/h — rafales possibles en moto` });
       }
     }
   }
