@@ -48,7 +48,11 @@ app.use(express.static(join(__dirname, '../dashboard')));
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function gog(cmd) {
-  return execSync(`gog --account ${ACCOUNT} ${cmd}`, { encoding: 'utf8', timeout: 15000 });
+  return execSync(`gog --account ${ACCOUNT} ${cmd}`, {
+    encoding: 'utf8',
+    timeout: 15000,
+    env: { ...process.env, GOG_KEYRING_PASSWORD: process.env.GOG_KEYRING_PASSWORD }
+  });
 }
 
 function isoNow(offsetDays = 0) {
