@@ -9,7 +9,8 @@ import { extractRecipes } from './extractRecipes.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3000;
-const ACCOUNT = process.env.GOG_ACCOUNT;
+const ACCOUNT     = process.env.GOG_ACCOUNT;
+const CALENDAR_ID = process.env.CALENDAR_ID || 'primary';
 
 // ─── Mode Mock (dev sans gog) ───────────────────────────────────────────────
 
@@ -83,7 +84,7 @@ app.get('/api/events', (req, res) => {
     const days = parseInt(req.query.days) || 7;
     const from = isoNow(0);
     const to = isoNow(days);
-    const raw = JSON.parse(gog(`calendar events primary --from ${from} --to ${to} --json --no-input`));
+    const raw = JSON.parse(gog(`calendar events ${CALENDAR_ID} --from ${from} --to ${to} --json --no-input`));
     const events = (raw.events || raw).map(ev => ({
       id: ev.id,
       summary: ev.summary || '(sans titre)',
@@ -109,7 +110,7 @@ app.post('/api/events', (req, res) => {
     const { summary, start, end } = req.body;
     if (!summary || !start || !end) return res.status(400).json({ error: 'summary, start et end requis' });
     const s = JSON.stringify(summary).replace(/'/g, "'\\''");
-    gog(`calendar create primary --title ${s} --start "${start}" --end "${end}" --no-input`);
+    gog(`calendar create ${CALENDAR_ID} --title ${s} --start "${start}" --end "${end}" --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[POST /api/events]', err.message);
@@ -124,7 +125,7 @@ app.delete('/api/events/:id', (req, res) => {
     return res.json({ ok: true });
   }
   try {
-    gog(`calendar delete primary ${req.params.id} --no-input`);
+    gog(`calendar delete ${CALENDAR_ID} ${req.params.id} --no-input`);
     res.json({ ok: true });
   } catch (err) {
     console.error('[DELETE /api/events/:id]', err.message);
@@ -304,7 +305,7 @@ function startCalendarWatcher() {
     try {
       const from = isoNow(0);
       const to = isoNow(30);
-      const raw = JSON.parse(gog(`calendar events primary --from ${from} --to ${to} --json --no-input`));
+      const raw = JSON.parse(gog(`calendar events ${CALENDAR_ID} --from ${from} --to ${to} --json --no-input`));
       const events = (raw.events || raw).map(ev => ({
         id: ev.id,
         summary: ev.summary || '',
