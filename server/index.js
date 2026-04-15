@@ -1,8 +1,10 @@
 import 'dotenv/config';
 import express from 'express';
 import { execSync } from 'child_process';
+import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { extractRecipes } from './extractRecipes.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -201,6 +203,66 @@ app.delete('/api/tasks/:id', (req, res) => {
     console.error('[DELETE /api/tasks/:id]', err.message);
     res.status(500).json({ error: err.message });
   }
+});
+
+// ─── Recipes ────────────────────────────────────────────────────────────────
+
+const RECIPES_PATH = join(__dirname, 'data/recipes.json');
+const CACHE_DIR    = join(__dirname, 'cache/recipes');
+
+function loadRecipes() {
+  try { return JSON.parse(readFileSync(RECIPES_PATH, 'utf8')); }
+  catch { return []; }
+}
+function saveRecipes(recipes) {
+  writeFileSync(RECIPES_PATH, JSON.stringify(recipes, null, 2));
+}
+
+let extracting = false;
+async function triggerExtract() {
+  if (extracting || DEV_MODE) return;
+  extracting = true;
+  try { await extractRecipes(); } catch (err) { console.error('[recipes]', err.message); }
+  finally { extracting = false; }
+}
+
+app.get('/api/recipes', (req, res) => {
+  // Extraction en arrière-plan (non bloquant)
+  triggerExtract();
+  res.json(loadRecipes());
+});
+
+app.get('/api/recipes/image/:id', (req, res) => {
+  const p = join(CACHE_DIR, `${req.params.id}.png`);
+  if (!existsSync(p)) return res.status(404).end();
+  res.setHeader('Cache-Control', 'max-age=604800');
+  res.sendFile(p);
+});
+
+app.patch('/api/recipes/:id/done', (req, res) => {
+  const recipes = loadRecipes();
+  const r = recipes.find(r => r.id === req.params.id);
+  if (!r) return res.status(404).json({ error: 'not found' });
+  r.done = !r.done;
+  saveRecipes(recipes);
+  res.json({ ok: true, done: r.done });
+});
+
+app.delete('/api/recipes/:id', (req, res) => {
+  let recipes = loadRecipes();
+  const r = recipes.find(r => r.id === req.params.id);
+  if (!r) return res.status(404).json({ error: 'not found' });
+  recipes = recipes.filter(r => r.id !== req.params.id);
+  saveRecipes(recipes);
+  // Supprimer l'image cachée
+  const imgPath = join(CACHE_DIR, `${req.params.id}.png`);
+  if (existsSync(imgPath)) { try { unlinkSync(imgPath); } catch {} }
+  res.json({ ok: true });
+});
+
+app.post('/api/recipes/refresh', async (req, res) => {
+  res.json({ ok: true, message: 'Extraction lancée' });
+  triggerExtract();
 });
 
 // ─── SSE — push temps réel vers le dashboard ────────────────────────────────

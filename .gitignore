@@ -41,3 +41,6 @@ temp/
 # Coverage reports
 coverage/
 .nyc_output/
+server/cache/
+server/logs/
+server/data/recipes.json
