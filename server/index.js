@@ -203,6 +203,65 @@ app.delete('/api/tasks/:id', (req, res) => {
   }
 });
 
+// ─── SSE — push temps réel vers le dashboard ────────────────────────────────
+
+const sseClients = new Set();
+
+app.get('/events', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  // Maintenir la connexion vivante
+  const keepAlive = setInterval(() => res.write(': ping\n\n'), 20000);
+  sseClients.add(res);
+
+  req.on('close', () => {
+    clearInterval(keepAlive);
+    sseClients.delete(res);
+  });
+});
+
+function pushUpdate(type = 'update') {
+  const msg = `data: ${type}\n\n`;
+  for (const client of sseClients) {
+    client.write(msg);
+  }
+}
+
+// Poll Google Calendar toutes les 30s, push SSE si changement détecté
+let lastEventsHash = null;
+
+function hashEvents(events) {
+  return events.map(e => `${e.id}:${e.summary}:${e.start}`).join('|');
+}
+
+function startCalendarWatcher() {
+  if (DEV_MODE) return;
+
+  setInterval(async () => {
+    try {
+      const from = isoNow(0);
+      const to = isoNow(30);
+      const raw = JSON.parse(gog(`calendar events primary --from ${from} --to ${to} --json --no-input`));
+      const events = (raw.events || raw).map(ev => ({
+        id: ev.id,
+        summary: ev.summary || '',
+        start: ev.start?.dateTime || ev.start?.date || ev.start,
+      }));
+      const hash = hashEvents(events);
+      if (lastEventsHash !== null && hash !== lastEventsHash) {
+        console.log('[SSE] Changement détecté dans le calendrier — push update');
+        pushUpdate('calendar');
+      }
+      lastEventsHash = hash;
+    } catch (err) {
+      console.error('[watcher]', err.message);
+    }
+  }, 30000);
+}
+
 // ─── Démarrage ──────────────────────────────────────────────────────────────
 
 app.listen(PORT, () => {
@@ -212,4 +271,5 @@ app.listen(PORT, () => {
   } else {
     console.log(`Compte Google : ${ACCOUNT}`);
   }
+  startCalendarWatcher();
 });
