@@ -227,8 +227,6 @@ async function triggerExtract() {
 }
 
 app.get('/api/recipes', (req, res) => {
-  // Extraction en arrière-plan (non bloquant)
-  triggerExtract();
   res.json(loadRecipes());
 });
 
