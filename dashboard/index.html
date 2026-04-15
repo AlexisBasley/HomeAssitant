@@ -4,397 +4,629 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard Familial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    body {
-      background: #0f1117;
-      color: #e8e9ed;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      padding: 16px;
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      background: #f0ebe3;
+      color: #3d3429;
+      font-family: 'Nunito', sans-serif;
+    }
+
+    /* ════════════════════════════════════
+       LAYOUT PRINCIPAL — 100vh sans scroll
+       ════════════════════════════════════ */
+    .dashboard {
       display: grid;
-      grid-template-columns: 2fr 1fr;
-      grid-template-rows: auto auto auto auto;
-      gap: 14px;
+      grid-template-rows: 72px 1fr 140px;
+      grid-template-columns: 3fr 1fr;
+      grid-template-areas:
+        "header  header"
+        "agenda  tasks"
+        "bottom  tasks";
+      gap: 10px;
+      padding: 10px;
+      height: 100vh;
+      max-width: 1280px;
+      margin: 0 auto;
     }
 
     /* ── Carte ── */
     .card {
-      background: #1a1d27;
-      border-radius: 16px;
-      padding: 18px 20px;
+      background: #fff;
+      border-radius: 20px;
+      padding: 14px 18px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
       overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
-    .card h2 {
-      font-size: 0.8rem;
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 0.68rem;
       text-transform: uppercase;
       letter-spacing: 0.1em;
-      color: #6b7280;
-      margin-bottom: 12px;
+      color: #a89984;
+      font-weight: 700;
     }
 
-    /* ── Header ── */
+    /* ════════════════════════════════════
+       HEADER
+       ════════════════════════════════════ */
     #header {
-      grid-column: 1 / -1;
-      display: flex;
+      grid-area: header;
+      flex-direction: row;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
+      padding: 0 22px;
     }
-    #clock { font-size: 3rem; font-weight: 700; line-height: 1; }
-    #date-label { font-size: 1.1rem; color: #9ca3af; margin-top: 4px; }
-    #weather {
-      text-align: right;
-      font-size: 1.4rem;
-      font-weight: 600;
-    }
-    #weather small { display: block; font-size: 0.8rem; color: #6b7280; font-weight: 400; }
-    #refresh-time { font-size: 0.75rem; color: #4b5563; margin-top: 2px; text-align: right; }
+    .header-left { display: flex; align-items: baseline; gap: 14px; }
+    .header-greeting { font-size: 0.95rem; font-weight: 600; color: #a89984; }
+    #clock { font-size: 2.4rem; font-weight: 800; line-height: 1; color: #3d3429; }
+    #date-label { font-size: 0.9rem; color: #a89984; }
+    .header-center { display: flex; align-items: center; gap: 6px; }
+    .refresh-dot { width: 7px; height: 7px; background: #52b788; border-radius: 50%; display: inline-block; }
+    #refresh-time { font-size: 0.75rem; color: #a89984; font-weight: 600; }
+    .header-right { display: flex; align-items: baseline; gap: 10px; }
+    #weather-temp { font-size: 1.6rem; font-weight: 800; color: #3d3429; }
+    #weather-desc { font-size: 0.8rem; color: #a89984; }
 
-    /* ── Agenda ── */
-    #agenda { grid-column: 1 / 2; }
-    .day-group { margin-bottom: 14px; }
+    /* ════════════════════════════════════
+       AGENDA
+       ════════════════════════════════════ */
+    #agenda { grid-area: agenda; }
+
+    .toggle-pills { display: flex; gap: 4px; }
+    .pill {
+      border: none; border-radius: 20px;
+      padding: 5px 12px;
+      font-size: 0.75rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+      cursor: pointer; background: #f0ebe3; color: #a89984;
+      min-height: 36px; -webkit-tap-highlight-color: transparent;
+    }
+    .pill.active { background: #3d3429; color: #fff; }
+
+    .agenda-scroll {
+      flex: 1; overflow-y: auto; min-height: 0;
+    }
+    .agenda-scroll::-webkit-scrollbar { width: 3px; }
+    .agenda-scroll::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
+
+    .day-group { margin-bottom: 10px; }
     .day-label {
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #6366f1;
-      margin-bottom: 6px;
+      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+      color: #a89984; font-weight: 700; margin-bottom: 4px;
     }
     .event-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: #12141f;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 8px;
+      background: #faf8f5; border-radius: 12px;
+      padding: 7px 10px; margin-bottom: 4px;
     }
-    .event-time { font-size: 0.8rem; color: #6b7280; min-width: 48px; }
-    .event-title { flex: 1; margin: 0 10px; font-size: 0.95rem; }
+    .event-bar { width: 3px; height: 30px; border-radius: 3px; flex-shrink: 0; }
+    .event-info { flex: 1; min-width: 0; }
+    .event-time { font-size: 0.7rem; color: #a89984; font-weight: 600; }
+    .event-title { font-size: 0.9rem; font-weight: 700; color: #3d3429; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .event-calendar { font-size: 0.65rem; color: #a89984; }
     .btn-del {
-      background: none;
-      border: none;
-      color: #4b5563;
-      font-size: 1.1rem;
-      cursor: pointer;
-      padding: 4px 6px;
-      border-radius: 6px;
-      line-height: 1;
+      background: none; border: none; color: #c8bdb0; font-size: 1.1rem;
+      cursor: pointer; width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; flex-shrink: 0;
       -webkit-tap-highlight-color: transparent;
     }
-    .btn-del:active { background: #2d2f3f; color: #ef4444; }
-    #agenda-empty { color: #4b5563; font-size: 0.9rem; }
+    .btn-del:active { background: #f0ebe3; color: #e05252; }
 
-    /* ── Tasks ── */
-    #tasks { grid-column: 2 / 3; grid-row: 2 / 4; }
+    /* Vue Mois */
+    #month-view { display: none; flex-direction: column; flex: 1; min-height: 0; }
+    .month-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px; flex-shrink: 0;
+    }
+    .month-nav-btn {
+      background: #f0ebe3; border: none; border-radius: 10px;
+      width: 40px; height: 40px; font-size: 1rem;
+      cursor: pointer; font-family: 'Nunito', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .month-nav-btn:active { background: #e4ddd4; }
+    #month-label { font-size: 0.95rem; font-weight: 800; color: #3d3429; }
+    .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .month-dow { text-align: center; font-size: 0.62rem; font-weight: 700; color: #a89984; padding-bottom: 3px; text-transform: uppercase; }
+    .month-day {
+      aspect-ratio: 1; display: flex; flex-direction: column;
+      align-items: center; border-radius: 10px; padding: 3px 2px 2px;
+    }
+    .month-day.other-month { opacity: 0.35; }
+    .month-day-num {
+      font-size: 0.78rem; font-weight: 700;
+      width: 22px; height: 22px;
+      display: flex; align-items: center; justify-content: center; border-radius: 50%;
+    }
+    .month-day.today .month-day-num { background: #4285f4; color: #fff; }
+    .month-dots { display: flex; gap: 2px; flex-wrap: wrap; justify-content: center; margin-top: 2px; }
+    .month-dot { width: 5px; height: 5px; border-radius: 50%; }
+    .month-more { font-size: 0.55rem; color: #a89984; font-weight: 700; }
+
+    /* ════════════════════════════════════
+       TASKS — hauteur double (rows 2+3)
+       ════════════════════════════════════ */
+    #tasks { grid-area: tasks; }
+    .tasks-scroll { flex: 1; overflow-y: auto; min-height: 0; }
+    .tasks-scroll::-webkit-scrollbar { width: 3px; }
+    .tasks-scroll::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
     .task-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: #12141f;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 6px;
+      display: flex; align-items: center; gap: 8px;
+      background: #faf8f5; border-radius: 12px;
+      padding: 6px 10px; margin-bottom: 5px;
     }
     .task-check {
-      width: 20px; height: 20px;
-      border: 2px solid #4b5563;
-      border-radius: 50%;
-      flex-shrink: 0;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+      width: 36px; height: 36px; min-width: 36px;
+      border: 2px solid #c8bdb0; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; color: transparent;
+      -webkit-tap-highlight-color: transparent; flex-shrink: 0;
     }
-    .task-check.done { background: #6366f1; border-color: #6366f1; }
-    .task-title { flex: 1; font-size: 0.95rem; }
-    .task-title.done { text-decoration: line-through; color: #4b5563; }
-    #task-form {
-      display: flex;
-      gap: 8px;
-      margin-top: 12px;
-    }
+    .task-check.done { background: #52b788; border-color: #52b788; color: #fff; }
+    .task-title { flex: 1; font-size: 0.88rem; font-weight: 600; color: #3d3429; }
+    .task-title.done { text-decoration: line-through; color: #a89984; }
+    #task-form { display: flex; gap: 6px; margin-top: 10px; flex-shrink: 0; }
     #task-input {
-      flex: 1;
-      background: #12141f;
-      border: 1px solid #2d2f3f;
-      border-radius: 10px;
-      color: #e8e9ed;
-      padding: 10px 12px;
-      font-size: 0.9rem;
-      outline: none;
+      flex: 1; background: #faf8f5; border: 1.5px solid #e8e1d8;
+      border-radius: 12px; color: #3d3429; padding: 8px 12px;
+      font-size: 0.85rem; font-family: 'Nunito', sans-serif;
+      outline: none; min-height: 40px;
     }
-    #task-input:focus { border-color: #6366f1; }
+    #task-input:focus { border-color: #4285f4; }
     #task-add {
-      background: #6366f1;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 16px;
-      font-size: 0.9rem;
-      cursor: pointer;
+      background: #3d3429; color: #fff; border: none;
+      border-radius: 12px; padding: 8px 14px; font-size: 1.1rem;
+      cursor: pointer; font-family: 'Nunito', sans-serif;
+      min-width: 40px; min-height: 40px;
       -webkit-tap-highlight-color: transparent;
     }
-    #task-add:active { background: #4f52d1; }
+    #task-add:active { background: #2a231b; }
 
-    /* ── Accès rapides ── */
-    #quick { grid-column: 1 / 2; }
-    .quick-grid {
+    /* ════════════════════════════════════
+       BANDE DU BAS — Recettes + Chat côte à côte
+       ════════════════════════════════════ */
+    #bottom {
+      grid-area: bottom;
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
-    .quick-btn {
-      background: #12141f;
-      border: none;
-      border-radius: 12px;
-      color: #e8e9ed;
-      padding: 16px 8px;
-      font-size: 0.85rem;
-      text-align: center;
-      cursor: pointer;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
+
+    /* Recettes — scroll horizontal */
+    #recipes { overflow: hidden; display: flex; flex-direction: column; }
+    .recipes-header-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 6px; flex-shrink: 0;
+    }
+    .recipes-progress-label { font-size: 0.7rem; color: #a89984; font-weight: 600; white-space: nowrap; }
+    .recipes-progress-bar-wrap {
+      flex: 1; background: #f0ebe3; border-radius: 6px; height: 5px; overflow: hidden;
+    }
+    .recipes-progress-bar {
+      height: 100%; background: #52b788; border-radius: 6px; transition: width 0.4s ease;
+    }
+    .recipes-scroll {
+      display: flex; gap: 8px;
+      overflow-x: auto; overflow-y: hidden;
+      flex: 1; min-height: 0;
+      padding-bottom: 4px;
+      scrollbar-width: thin;
+    }
+    .recipes-scroll::-webkit-scrollbar { height: 3px; }
+    .recipes-scroll::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
+    .recipe-card {
+      flex-shrink: 0; width: 140px;
+      background: #faf8f5; border-radius: 14px; overflow: hidden;
+      display: flex; flex-direction: column;
+      transition: opacity 0.3s, filter 0.3s;
+    }
+    .recipe-card.cuisinee { opacity: 0.45; filter: grayscale(1); }
+    .recipe-emoji {
+      height: 44px; display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; background: #f0ebe3; flex-shrink: 0;
+    }
+    .recipe-body { padding: 6px 8px; flex: 1; }
+    .recipe-name {
+      font-size: 0.75rem; font-weight: 700; color: #3d3429;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .recipe-ingredients { font-size: 0.62rem; color: #a89984; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .recipe-badge {
+      display: inline-block; background: #52b788; color: #fff;
+      font-size: 0.6rem; font-weight: 800; border-radius: 6px;
+      padding: 1px 5px; margin-top: 2px;
+    }
+    .recipe-footer { display: flex; gap: 4px; padding: 0 6px 6px; flex-shrink: 0; }
+    .recipe-btn {
+      border: none; border-radius: 8px; padding: 5px 8px;
+      font-size: 0.72rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+      cursor: pointer; min-height: 36px;
       -webkit-tap-highlight-color: transparent;
     }
-    .quick-btn:active { background: #2d2f3f; }
-    .quick-icon { font-size: 1.6rem; }
-    #garage-btn .quick-icon { transition: color 0.2s; }
-    #garage-btn.open .quick-icon { color: #22c55e; }
-    #garage-btn.closed .quick-icon { color: #ef4444; }
+    .recipe-btn-done { background: #52b788; color: #fff; flex: 1; }
+    .recipe-btn-done:active { background: #3d9a6d; }
+    .recipe-btn-del { background: #f0ebe3; color: #a89984; }
+    .recipe-btn-del:active { color: #e05252; }
 
-    /* ── Chat ── */
-    #chat { grid-column: 1 / -1; }
+    /* Chat */
+    #chat { overflow: hidden; display: flex; flex-direction: column; }
     #chat-messages {
-      height: 120px;
-      overflow-y: auto;
-      background: #12141f;
-      border-radius: 10px;
-      padding: 10px 14px;
-      margin-bottom: 10px;
-      font-size: 0.9rem;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      flex: 1; overflow-y: auto; min-height: 0;
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 8px; padding: 2px 0;
     }
-    .msg-user { color: #6366f1; align-self: flex-end; }
-    .msg-bot  { color: #9ca3af; align-self: flex-start; }
-    #chat-form { display: flex; gap: 8px; }
+    #chat-messages::-webkit-scrollbar { width: 3px; }
+    #chat-messages::-webkit-scrollbar-thumb { background: #e8e1d8; border-radius: 4px; }
+    .chat-bubble { display: flex; align-items: flex-end; gap: 6px; }
+    .chat-bubble.user { flex-direction: row-reverse; }
+    .chat-avatar {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 800; flex-shrink: 0;
+    }
+    .chat-avatar.ai { background: #4285f4; color: #fff; }
+    .chat-avatar.you { background: #f0810f; color: #fff; }
+    .chat-text {
+      max-width: 75%; padding: 7px 11px; border-radius: 14px;
+      font-size: 0.82rem; line-height: 1.4;
+    }
+    .chat-bubble.ai .chat-text { background: #f5f1ec; color: #3d3429; border-bottom-left-radius: 3px; }
+    .chat-bubble.user .chat-text { background: #4285f4; color: #fff; border-bottom-right-radius: 3px; }
+    #chat-form { display: flex; gap: 6px; flex-shrink: 0; }
     #chat-input {
-      flex: 1;
-      background: #12141f;
-      border: 1px solid #2d2f3f;
-      border-radius: 10px;
-      color: #e8e9ed;
-      padding: 10px 14px;
-      font-size: 0.9rem;
-      outline: none;
+      flex: 1; background: #faf8f5; border: 1.5px solid #e8e1d8;
+      border-radius: 12px; color: #3d3429; padding: 8px 12px;
+      font-size: 0.85rem; font-family: 'Nunito', sans-serif;
+      outline: none; min-height: 40px;
     }
-    #chat-input:focus { border-color: #6366f1; }
+    #chat-input:focus { border-color: #4285f4; }
     #chat-send {
-      background: #6366f1;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 10px 20px;
-      font-size: 0.9rem;
-      cursor: pointer;
+      background: #4285f4; color: #fff; border: none;
+      border-radius: 12px; padding: 8px 16px;
+      font-size: 0.85rem; font-weight: 700; font-family: 'Nunito', sans-serif;
+      cursor: pointer; min-height: 40px;
       -webkit-tap-highlight-color: transparent;
     }
-    #chat-send:active { background: #4f52d1; }
+    #chat-send:active { background: #2b6dd4; }
 
-    /* ── Erreur serveur ── */
-    .server-down {
-      color: #ef4444;
-      font-size: 0.85rem;
-      padding: 6px 0;
-    }
+    /* ── Messages d'état ── */
+    .server-down { color: #e05252; font-size: 0.8rem; font-weight: 600; }
+    .empty-msg { color: #a89984; font-size: 0.85rem; }
   </style>
 </head>
 <body>
+<div class="dashboard">
 
   <!-- HEADER -->
   <div class="card" id="header">
-    <div>
-      <div id="clock">00:00:00</div>
+    <div class="header-left">
+      <span class="header-greeting">Bonjour famille 👋</span>
+      <div id="clock">00:00</div>
       <div id="date-label">—</div>
     </div>
-    <div>
-      <div id="weather">…</div>
-      <div id="refresh-time"></div>
+    <div class="header-center">
+      <span class="refresh-dot"></span>
+      <span id="refresh-time">Actualisation…</span>
+    </div>
+    <div class="header-right">
+      <div id="weather-temp">—</div>
+      <div id="weather-desc">météo…</div>
     </div>
   </div>
 
   <!-- AGENDA -->
   <div class="card" id="agenda">
-    <h2>Agenda — 7 prochains jours</h2>
-    <div id="agenda-content"><span id="agenda-empty">Chargement…</span></div>
+    <div class="card-header">
+      <span class="card-title">Agenda</span>
+      <div class="toggle-pills">
+        <button class="pill active" id="pill-list" onclick="switchView('list')">Liste</button>
+        <button class="pill" id="pill-month" onclick="switchView('month')">Mois</button>
+      </div>
+    </div>
+
+    <!-- Vue Liste -->
+    <div id="list-view" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <div class="agenda-scroll" id="agenda-content">
+        <span class="empty-msg">Chargement…</span>
+      </div>
+    </div>
+
+    <!-- Vue Mois -->
+    <div id="month-view">
+      <div class="month-nav">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">‹</button>
+        <span id="month-label">—</span>
+        <button class="month-nav-btn" onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="month-grid" id="month-grid"></div>
+    </div>
   </div>
 
   <!-- TASKS -->
   <div class="card" id="tasks">
-    <h2>Tâches</h2>
-    <div id="tasks-content"></div>
+    <div class="card-header">
+      <span class="card-title">Tâches</span>
+    </div>
+    <div class="tasks-scroll">
+      <div id="tasks-content"></div>
+    </div>
     <form id="task-form">
       <input id="task-input" type="text" placeholder="Nouvelle tâche…" autocomplete="off" />
       <button id="task-add" type="submit">+</button>
     </form>
   </div>
 
-  <!-- ACCÈS RAPIDES -->
-  <div class="card" id="quick">
-    <h2>Accès rapides</h2>
-    <div class="quick-grid">
-      <button class="quick-btn closed" id="garage-btn">
-        <span class="quick-icon">🚗</span>
-        Garage
-      </button>
-      <a class="quick-btn" href="https://home.netatmo.com" target="_blank" rel="noopener">
-        <span class="quick-icon">🌡️</span>
-        Netatmo
-      </a>
-      <a class="quick-btn" href="https://eseecloud.app" target="_blank" rel="noopener">
-        <span class="quick-icon">📷</span>
-        Caméras
-      </a>
-      <a class="quick-btn" href="https://smartlife.tuya.com" target="_blank" rel="noopener">
-        <span class="quick-icon">🔒</span>
-        Alarme
-      </a>
+  <!-- BANDE BAS : Recettes + Chat -->
+  <div id="bottom">
+
+    <!-- RECETTES PICNIC -->
+    <div class="card" id="recipes">
+      <div class="card-header" style="margin-bottom:6px;">
+        <span class="card-title">Recettes Picnic</span>
+      </div>
+      <div class="recipes-header-row">
+        <span class="recipes-progress-label" id="recipes-progress-label">0 / 0 cuisinées</span>
+        <div class="recipes-progress-bar-wrap">
+          <div class="recipes-progress-bar" id="recipes-progress-bar" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="recipes-scroll" id="recipes-scroll">
+        <span class="empty-msg">Chargement…</span>
+      </div>
     </div>
-  </div>
 
-  <!-- CHAT -->
-  <div class="card" id="chat">
-    <h2>Assistant OpenClaw</h2>
-    <div id="chat-messages"></div>
-    <form id="chat-form">
-      <input id="chat-input" type="text" placeholder="Envoyer une commande…" autocomplete="off" />
-      <button id="chat-send" type="submit">Envoyer</button>
-    </form>
-  </div>
+    <!-- CHAT -->
+    <div class="card" id="chat">
+      <div class="card-header" style="margin-bottom:6px;">
+        <span class="card-title">Assistant OpenClaw</span>
+      </div>
+      <div id="chat-messages"></div>
+      <form id="chat-form">
+        <input id="chat-input" type="text" placeholder="Envoyer un message…" autocomplete="off" />
+        <button id="chat-send" type="submit">Envoyer</button>
+      </form>
+    </div>
 
+  </div><!-- /bottom -->
+
+</div><!-- /dashboard -->
 <script>
 // ═══════════════════════════════════════════════════════
 // UTILITAIRES
 // ═══════════════════════════════════════════════════════
 
-const DAYS_FR = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const DAYS_FR   = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+const DAYS_SHORT = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
 const MONTHS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
-function formatTime(d) {
-  return [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2,'0')).join(':');
-}
-function formatDate(d) {
-  return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function formatHM(iso) {
+  if (!iso) return '';
   const d = new Date(iso);
+  if (isNaN(d)) return '';
   return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
-function dayKey(iso) {
-  const d = new Date(iso);
+function dayKey(d) {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 function dayLabel(iso) {
   const d = new Date(iso);
-  const t = new Date();
-  const tk = `${t.getFullYear()}-${t.getMonth()}-${t.getDate()}`;
-  const tomorrow = new Date(t); tomorrow.setDate(t.getDate() + 1);
-  const tmk = `${tomorrow.getFullYear()}-${tomorrow.getMonth()}-${tomorrow.getDate()}`;
-  const dk = dayKey(iso);
-  if (dk === tk) return "Aujourd'hui";
-  if (dk === tmk) return 'Demain';
+  const today = new Date();
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  if (dayKey(d) === dayKey(today)) return "Aujourd'hui";
+  if (dayKey(d) === dayKey(tomorrow)) return 'Demain';
   return `${DAYS_FR[d.getDay()]} ${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
 }
-
 async function apiFetch(url, opts = {}) {
   const res = await fetch(url, opts);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
+// Couleurs par calendrier
+const CAL_COLORS = ['#4285f4','#ea4335','#9c27b0','#ff9800','#00897b','#e91e63','#3949ab','#43a047'];
+const calColorMap = {};
+function calColor(name) {
+  if (!calColorMap[name]) calColorMap[name] = CAL_COLORS[Object.keys(calColorMap).length % CAL_COLORS.length];
+  return calColorMap[name];
+}
+
 // ═══════════════════════════════════════════════════════
-// HORLOGE + DATE
+// HORLOGE
 // ═══════════════════════════════════════════════════════
 
 function tickClock() {
   const now = new Date();
-  document.getElementById('clock').textContent = formatTime(now);
-  document.getElementById('date-label').textContent = formatDate(now);
+  document.getElementById('clock').textContent =
+    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('date-label').textContent =
+    `${DAYS_FR[now.getDay()]} ${now.getDate()} ${MONTHS_FR[now.getMonth()]} ${now.getFullYear()}`;
 }
 tickClock();
 setInterval(tickClock, 1000);
 
 // ═══════════════════════════════════════════════════════
-// MÉTÉO (wttr.in)
+// MÉTÉO
 // ═══════════════════════════════════════════════════════
 
 async function loadWeather() {
   try {
     const data = await apiFetch('https://wttr.in/Chelles?format=j1');
     const cur = data.current_condition[0];
-    const temp = cur.temp_C;
-    const desc = cur.weatherDesc[0].value;
-    document.getElementById('weather').innerHTML =
-      `${temp}°C <small>${desc}</small>`;
+    document.getElementById('weather-temp').textContent = `${cur.temp_C}°C`;
+    document.getElementById('weather-desc').textContent = cur.weatherDesc[0].value;
   } catch {
-    document.getElementById('weather').textContent = '— météo indisponible';
+    document.getElementById('weather-temp').textContent = '—';
+    document.getElementById('weather-desc').textContent = 'météo indisponible';
   }
 }
 loadWeather();
 setInterval(loadWeather, 10 * 60 * 1000);
 
 // ═══════════════════════════════════════════════════════
+// MOCK DATA
+// ═══════════════════════════════════════════════════════
+
+const MOCK_EVENTS = (() => {
+  const today = new Date();
+  const ev = (d, h, title, cal, color) => {
+    const dt = new Date(today);
+    dt.setDate(today.getDate() + d);
+    dt.setHours(h, 0, 0, 0);
+    return { id: `me-${d}-${h}`, summary: title, start: dt.toISOString(), calendar: cal, calColor: color };
+  };
+  return [
+    ev(0, 8,  'Réunion école',      'Famille', '#4285f4'),
+    ev(0, 18, 'Dîner en famille',   'Famille', '#4285f4'),
+    ev(1, 9,  'Médecin Marie',      'Marie',   '#ea4335'),
+    ev(1, 14, 'Yoga',               'Marie',   '#ea4335'),
+    ev(2, 10, 'Sport Thomas',       'Thomas',  '#9c27b0'),
+    ev(3, 20, 'Cinéma',             'Famille', '#4285f4'),
+    ev(4, 8,  'Livraison courses',  'Famille', '#4285f4'),
+    ev(5, 11, 'Anniversaire mamie', 'Famille', '#4285f4'),
+    ev(6, 16, 'Piscine Thomas',     'Thomas',  '#9c27b0'),
+  ];
+})();
+
+const MOCK_TASKS = [
+  { id: 'mt1', title: 'Faire les courses',       completed: false },
+  { id: 'mt2', title: 'Appeler le médecin',      completed: false },
+  { id: 'mt3', title: 'Réparer vélo Thomas',     completed: true  },
+  { id: 'mt4', title: 'Renouveler abonnement',   completed: false },
+  { id: 'mt5', title: 'Commander livres école',  completed: true  },
+  { id: 'mt6', title: 'Réserver vacances',       completed: false },
+];
+
+const MOCK_RECIPES = [
+  { id: 'mr1', name: 'Poulet rôti aux herbes', emoji: '🍗', ingredients: ['Poulet', 'Herbes de Provence', 'Ail', 'Citron'], done: false },
+  { id: 'mr2', name: 'Pasta carbonara',        emoji: '🍝', ingredients: ['Pâtes', 'Lardons', 'Œufs', 'Parmesan'],         done: true  },
+  { id: 'mr3', name: 'Saumon en papillote',    emoji: '🐟', ingredients: ['Saumon', 'Citron', 'Aneth', 'Beurre'],          done: false },
+  { id: 'mr4', name: 'Curry de légumes',       emoji: '🍛', ingredients: ['Pois chiches', 'Lait de coco', 'Curry', 'Riz'], done: false },
+  { id: 'mr5', name: 'Quiche lorraine',        emoji: '🥧', ingredients: ['Pâte brisée', 'Lardons', 'Crème', 'Œufs'],     done: false },
+];
+
+// ═══════════════════════════════════════════════════════
 // AGENDA
 // ═══════════════════════════════════════════════════════
 
+let allEvents = [];
+let currentView = 'list';
+let monthOffset = 0;
+
+function switchView(v) {
+  currentView = v;
+  document.getElementById('pill-list').classList.toggle('active', v === 'list');
+  document.getElementById('pill-month').classList.toggle('active', v === 'month');
+  document.getElementById('list-view').style.display  = v === 'list'  ? 'flex' : 'none';
+  document.getElementById('month-view').style.display = v === 'month' ? 'flex' : 'none';
+  if (v === 'month') renderMonth();
+}
+
+function changeMonth(delta) { monthOffset += delta; renderMonth(); }
+
 async function loadEvents() {
   const container = document.getElementById('agenda-content');
+  let events;
   try {
-    const events = await apiFetch('/api/events?days=7');
-    if (!events.length) {
-      container.innerHTML = '<span id="agenda-empty">Aucun événement cette semaine.</span>';
-      return;
-    }
-    // Grouper par jour
-    const groups = {};
-    for (const ev of events) {
-      const k = dayKey(ev.start);
-      if (!groups[k]) groups[k] = { label: dayLabel(ev.start), items: [] };
-      groups[k].items.push(ev);
-    }
-    container.innerHTML = Object.values(groups).map(g => `
-      <div class="day-group">
-        <div class="day-label">${g.label}</div>
-        ${g.items.map(ev => `
-          <div class="event-item" data-id="${ev.id}">
-            <span class="event-time">${formatHM(ev.start)}</span>
-            <span class="event-title">${escHtml(ev.summary || '(sans titre)')}</span>
-            <button class="btn-del" data-id="${ev.id}" title="Supprimer">×</button>
-          </div>
-        `).join('')}
-      </div>
-    `).join('');
+    events = await apiFetch('/api/events?days=30');
+    events = events.map(ev => ({ ...ev, calColor: ev.calColor || calColor(ev.calendar || 'primary') }));
+  } catch { events = MOCK_EVENTS; }
+  allEvents = events;
+  if (currentView === 'month') renderMonth();
+  if (!events.length) { container.innerHTML = '<span class="empty-msg">Aucun événement.</span>'; return; }
 
-    container.querySelectorAll('.btn-del').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!confirm('Supprimer cet événement ?')) return;
-        try {
-          await apiFetch(`/api/events/${btn.dataset.id}`, { method: 'DELETE' });
-          loadEvents();
-        } catch {
-          alert('Erreur lors de la suppression.');
-        }
-      });
-    });
-  } catch {
-    container.innerHTML = '<span class="server-down">Serveur indisponible — agenda non chargé</span>';
+  const groups = new Map();
+  for (const ev of events) {
+    const k = dayKey(new Date(ev.start));
+    if (!groups.has(k)) groups.set(k, { label: dayLabel(ev.start), items: [] });
+    groups.get(k).items.push(ev);
   }
+  container.innerHTML = Array.from(groups.values()).map(g => `
+    <div class="day-group">
+      <div class="day-label">${esc(g.label)}</div>
+      ${g.items.map(ev => `
+        <div class="event-item">
+          <div class="event-bar" style="background:${esc(ev.calColor||'#4285f4')}"></div>
+          <div class="event-info">
+            <div class="event-time">${esc(formatHM(ev.start))}</div>
+            <div class="event-title">${esc(ev.summary || '(sans titre)')}</div>
+            <div class="event-calendar">${esc(ev.calendar || 'Agenda')}</div>
+          </div>
+          <button class="btn-del" data-id="${esc(ev.id)}" title="Supprimer">×</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Supprimer cet événement ?')) return;
+      try {
+        await apiFetch(`/api/events/${encodeURIComponent(btn.dataset.id)}`, { method: 'DELETE' });
+        loadEvents();
+      } catch { alert('Erreur lors de la suppression.'); }
+    });
+  });
+}
+
+function renderMonth() {
+  const today = new Date();
+  const target = new Date(today.getFullYear(), today.getMonth() + monthOffset, 1);
+  const year = target.getFullYear(), month = target.getMonth();
+  document.getElementById('month-label').textContent =
+    `${MONTHS_FR[month].charAt(0).toUpperCase() + MONTHS_FR[month].slice(1)} ${year}`;
+
+  let startDow = new Date(year, month, 1).getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const daysInPrev  = new Date(year, month, 0).getDate();
+
+  const evByDay = {};
+  for (const ev of allEvents) {
+    const d = new Date(ev.start);
+    if (d.getFullYear() === year && d.getMonth() === month) {
+      const day = d.getDate();
+      if (!evByDay[day]) evByDay[day] = [];
+      evByDay[day].push(ev);
+    }
+  }
+  const todayKey = dayKey(today);
+  let html = DAYS_SHORT.map(d => `<div class="month-dow">${d}</div>`).join('');
+  for (let i = 0; i < startDow; i++) {
+    html += `<div class="month-day other-month"><div class="month-day-num">${daysInPrev - startDow + 1 + i}</div></div>`;
+  }
+  for (let day = 1; day <= daysInMonth; day++) {
+    const isToday = dayKey(new Date(year, month, day)) === todayKey;
+    const evs = evByDay[day] || [];
+    let dots = '';
+    if (evs.length >= 1 && evs.length <= 2) {
+      dots = `<div class="month-dots">${evs.map(e => `<div class="month-dot" style="background:${esc(e.calColor||'#4285f4')}"></div>`).join('')}</div>`;
+    } else if (evs.length >= 3) {
+      dots = `<div class="month-dots"><div class="month-dot" style="background:${esc(evs[0].calColor||'#4285f4')}"></div><div class="month-dot" style="background:${esc(evs[1].calColor||'#4285f4')}"></div><span class="month-more">+${evs.length-2}</span></div>`;
+    }
+    html += `<div class="month-day${isToday?' today':''}"><div class="month-day-num">${day}</div>${dots}</div>`;
+  }
+  const remaining = (startDow + daysInMonth) % 7;
+  if (remaining) for (let i = 1; i <= 7 - remaining; i++)
+    html += `<div class="month-day other-month"><div class="month-day-num">${i}</div></div>`;
+  document.getElementById('month-grid').innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -403,39 +635,33 @@ async function loadEvents() {
 
 async function loadTasks() {
   const container = document.getElementById('tasks-content');
-  try {
-    const tasks = await apiFetch('/api/tasks');
-    if (!tasks.length) {
-      container.innerHTML = '<span style="color:#4b5563;font-size:.9rem">Aucune tâche.</span>';
-      return;
-    }
-    container.innerHTML = tasks.map(t => `
-      <div class="task-item" data-id="${t.id}">
-        <div class="task-check ${t.completed ? 'done' : ''}" data-id="${t.id}"></div>
-        <span class="task-title ${t.completed ? 'done' : ''}">${escHtml(t.title)}</span>
-        <button class="btn-del" data-id="${t.id}" title="Supprimer">×</button>
-      </div>
-    `).join('');
+  let tasks;
+  try { tasks = await apiFetch('/api/tasks'); }
+  catch { tasks = MOCK_TASKS; }
 
-    container.querySelectorAll('.task-check').forEach(el => {
-      el.addEventListener('click', async () => {
-        try {
-          await apiFetch(`/api/tasks/${el.dataset.id}/complete`, { method: 'PATCH' });
-          loadTasks();
-        } catch { alert('Erreur.'); }
-      });
+  if (!tasks.length) { container.innerHTML = '<span class="empty-msg">Aucune tâche.</span>'; return; }
+  container.innerHTML = tasks.map(t => `
+    <div class="task-item">
+      <div class="task-check${t.completed?' done':''}" data-id="${esc(t.id)}" role="checkbox">${t.completed?'✓':''}</div>
+      <span class="task-title${t.completed?' done':''}">${esc(t.title)}</span>
+      <button class="btn-del" data-id="${esc(t.id)}" title="Supprimer">×</button>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.task-check').forEach(el => {
+    el.addEventListener('click', async () => {
+      try { await apiFetch(`/api/tasks/${encodeURIComponent(el.dataset.id)}/complete`, { method: 'PATCH' }); }
+      catch {}
+      loadTasks();
     });
-    container.querySelectorAll('.btn-del').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        try {
-          await apiFetch(`/api/tasks/${btn.dataset.id}`, { method: 'DELETE' });
-          loadTasks();
-        } catch { alert('Erreur.'); }
-      });
+  });
+  container.querySelectorAll('.btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try { await apiFetch(`/api/tasks/${encodeURIComponent(btn.dataset.id)}`, { method: 'DELETE' }); }
+      catch {}
+      loadTasks();
     });
-  } catch {
-    container.innerHTML = '<span class="server-down">Serveur indisponible — tâches non chargées</span>';
-  }
+  });
 }
 
 document.getElementById('task-form').addEventListener('submit', async e => {
@@ -444,55 +670,95 @@ document.getElementById('task-form').addEventListener('submit', async e => {
   const title = input.value.trim();
   if (!title) return;
   try {
-    await apiFetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
-    });
+    await apiFetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title }) });
     input.value = '';
     loadTasks();
-  } catch { alert('Erreur lors de la création de la tâche.'); }
+  } catch { alert('Erreur lors de la création.'); }
 });
 
 // ═══════════════════════════════════════════════════════
-// GARAGE (stub Tuya)
+// RECETTES PICNIC
 // ═══════════════════════════════════════════════════════
 
-let garageOpen = false;
-document.getElementById('garage-btn').addEventListener('click', () => {
-  garageOpen = !garageOpen;
-  const btn = document.getElementById('garage-btn');
-  btn.classList.toggle('open', garageOpen);
-  btn.classList.toggle('closed', !garageOpen);
-  // TODO: appel API Tuya
-});
+let recipes = [];
+
+function renderRecipes() {
+  const done = recipes.filter(r => r.done).length, total = recipes.length;
+  document.getElementById('recipes-progress-label').textContent = `${done} / ${total} cuisinée${done > 1 ? 's' : ''}`;
+  document.getElementById('recipes-progress-bar').style.width = total ? `${(done / total) * 100}%` : '0%';
+
+  const scroll = document.getElementById('recipes-scroll');
+  if (!recipes.length) { scroll.innerHTML = '<span class="empty-msg">Aucune recette.</span>'; return; }
+
+  scroll.innerHTML = recipes.map(r => `
+    <div class="recipe-card${r.done?' cuisinee':''}">
+      <div class="recipe-emoji">${r.emoji || '🍽️'}</div>
+      <div class="recipe-body">
+        <div class="recipe-name">${esc(r.name)}</div>
+        <div class="recipe-ingredients">${esc(Array.isArray(r.ingredients) ? r.ingredients.join(' · ') : '')}</div>
+        ${r.done ? '<div class="recipe-badge">Cuisinée</div>' : ''}
+      </div>
+      <div class="recipe-footer">
+        <button class="recipe-btn recipe-btn-done" data-id="${esc(r.id)}">✓</button>
+        <button class="recipe-btn recipe-btn-del" data-id="${esc(r.id)}">×</button>
+      </div>
+    </div>
+  `).join('');
+
+  scroll.querySelectorAll('.recipe-btn-done').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try { await apiFetch(`/api/recipes/${encodeURIComponent(id)}/done`, { method: 'PATCH' }); }
+      catch { const r = recipes.find(r => r.id === id); if (r) r.done = !r.done; }
+      await loadRecipes();
+    });
+  });
+  scroll.querySelectorAll('.recipe-btn-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      try { await apiFetch(`/api/recipes/${encodeURIComponent(id)}`, { method: 'DELETE' }); }
+      catch { recipes = recipes.filter(r => r.id !== id); }
+      await loadRecipes();
+    });
+  });
+}
+
+async function loadRecipes() {
+  try { recipes = await apiFetch('/api/recipes'); }
+  catch { if (!recipes.length) recipes = MOCK_RECIPES.map(r => ({ ...r })); }
+  renderRecipes();
+}
 
 // ═══════════════════════════════════════════════════════
 // CHAT
 // ═══════════════════════════════════════════════════════
 
-function appendMsg(text, type) {
+function appendBubble(text, role) {
   const box = document.getElementById('chat-messages');
   const el = document.createElement('div');
-  el.className = `msg-${type}`;
-  el.textContent = text;
+  el.className = `chat-bubble ${role}`;
+  el.innerHTML = `<div class="chat-avatar ${role}">${role === 'ai' ? 'AI' : 'V'}</div><div class="chat-text">${esc(text)}</div>`;
   box.appendChild(el);
   box.scrollTop = box.scrollHeight;
 }
 
-document.getElementById('chat-form').addEventListener('submit', e => {
+document.getElementById('chat-form').addEventListener('submit', async e => {
   e.preventDefault();
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;
-  appendMsg(msg, 'user');
+  appendBubble(msg, 'user');
   input.value = '';
-  // Stub — à brancher sur OpenClaw
-  setTimeout(() => appendMsg('Commande transmise à OpenClaw.', 'bot'), 400);
+  try {
+    const data = await apiFetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: msg }) });
+    appendBubble(data.reply || data.message || 'Message reçu.', 'ai');
+  } catch {
+    appendBubble('Serveur indisponible.', 'ai');
+  }
 });
 
 // ═══════════════════════════════════════════════════════
-// INDICATEUR DE RAFRAÎCHISSEMENT
+// REFRESH
 // ═══════════════════════════════════════════════════════
 
 function updateRefreshLabel() {
@@ -501,23 +767,22 @@ function updateRefreshLabel() {
     `Actualisé à ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 }
 
+try {
+  const es = new EventSource('/events');
+  es.onmessage = () => { loadEvents(); loadTasks(); loadRecipes(); updateRefreshLabel(); };
+  es.onerror = () => {};
+} catch {}
+
 async function refreshAll() {
-  await Promise.all([loadEvents(), loadTasks()]);
+  await Promise.all([loadEvents(), loadTasks(), loadRecipes()]);
   updateRefreshLabel();
-}
-
-// ═══════════════════════════════════════════════════════
-// SÉCURITÉ — échappement HTML
-// ═══════════════════════════════════════════════════════
-
-function escHtml(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 
+switchView('list');
 refreshAll();
 setInterval(refreshAll, 60 * 1000);
 </script>
